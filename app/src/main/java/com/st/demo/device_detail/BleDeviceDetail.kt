@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -80,8 +81,7 @@ fun BleDeviceDetail(
                 Text(stringResource(R.string.st_testAudio))
                 Spacer(modifier = Modifier.width(4.dp))
                 IconButton(
-                    enabled = bleDevice.value?.connectionStatus?.current?.equals(NodeState.Ready)
-                        ?: false,
+                    enabled = bleDevice.value?.connectionStatus?.current?.equals(NodeState.Ready) == true,
                     onClick = {
                         navController.navigate("audio/${deviceId}")
                     }) {
@@ -99,7 +99,20 @@ fun BleDeviceDetail(
 
         Text("Status: ${bleDevice.value?.connectionStatus?.current?.name?.uppercase() ?: ""}")
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth().padding(bottom = 4.dp,top = 4.dp)
+                .clickable {
+                    navController.navigate("movementTracking/${deviceId}")
+                },
+            colors = CardDefaults.cardColors(containerColor = Color(color = 0xFFF7F8FA) /*Grey1*/),
+        ) {
+            Text("Movement Tracking")
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         Text("Features: ")
 

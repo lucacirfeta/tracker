@@ -17,12 +17,11 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        tools:targetApi="35"
-        android:theme="@style/Theme.StDemo">
+        android:theme="@style/Theme.StDemo"
+        tools:targetApi="35">
         <activity
             android:name="com.st.demo.MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.StDemo.NoActionBar"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

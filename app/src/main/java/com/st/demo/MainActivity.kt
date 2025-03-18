@@ -15,7 +15,6 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -29,6 +28,7 @@ import com.st.demo.audio.AudioScreen
 import com.st.demo.device_detail.BleDeviceDetail
 import com.st.demo.device_list.BleDeviceList
 import com.st.demo.feature_detail.FeatureDetail
+import com.st.demo.tracker_sensor.MovementTrackingScreen
 import com.st.demo.ui.theme.StDemoTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -36,8 +36,10 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
-        enableEdgeToEdge(statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT,Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT,Color.TRANSPARENT))
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
@@ -59,7 +61,8 @@ private fun MainScreen() {
 
     StDemoTheme {
         NavHost(
-            navController = navController, startDestination = "list") {
+            navController = navController, startDestination = "list"
+        ) {
 
             composable(route = "list") {
                 BleDeviceList(
@@ -83,7 +86,8 @@ private fun MainScreen() {
 
             composable(
                 route = "feature/{deviceId}/{featureName}",
-                arguments = listOf(navArgument("deviceId") { type = NavType.StringType },
+                arguments = listOf(
+                    navArgument("deviceId") { type = NavType.StringType },
                     navArgument("featureName") { type = NavType.StringType })
             ) { backStackEntry ->
                 backStackEntry.arguments?.getString("deviceId")?.let { deviceId ->
@@ -109,6 +113,16 @@ private fun MainScreen() {
                         deviceId = deviceId
                     )
                 }
+            }
+
+            composable(
+                route = "movementTracking/{deviceId}",
+                arguments = listOf(navArgument("deviceId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                MovementTrackingScreen(
+                    navController = navController,
+                    deviceId = backStackEntry.arguments?.getString("deviceId")!!
+                )
             }
         }
     }

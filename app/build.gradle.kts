@@ -99,14 +99,27 @@ dependencies {
     // Blue ST SDK
     implementation(project(":st_blue_sdk"))
 
+    // Core Android
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.accompanist)
     implementation(libs.bundles.compose)
     implementation(libs.bundles.composeUiTooling)
     implementation(libs.bundles.network)
     implementation(libs.androidx.material2)
+
+    // DI
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
+    // Sensor & Math
+    implementation(libs.commons.math3)
+
+    // Architecture
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Debugging
     debugImplementation(libs.androidx.compose.uitestmanifest)
+    implementation(libs.timber)
 }

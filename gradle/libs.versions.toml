@@ -9,6 +9,7 @@
 # @pin https://github.com/google/accompanist#compose-versions
 accompanist = "0.36.0"
 accompanistPermission = "0.37.2"
+ahrsAndroid = "1.0.3"
 androidGradlePlugin = "8.9.0"
 # @pin https://developer.android.com/jetpack/androidx/releases/compose#versions
 androidxComposeBom = "2025.02.00"
@@ -22,27 +23,35 @@ androidxRoom = "2.6.1"
 apacheCommons = "3.11.1"
 appauth = "0.11.1"
 benManes = "0.51.0"
+commonsMath3 = "3.6.1"
 hilt = "2.55"
 jwt = "2.0.2"
 # @pin https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 kotlin = "2.0.20"
+kotlinxCoroutinesAndroid = "1.10.1"
 kotlinxSerializationJson = "1.8.0"
 # @pin
 ksp = "2.0.20-1.0.25"
+lifecycleRuntimeKtx = "2.8.7"
+lifecycleViewmodelKtx = "2.8.7"
 littlerobots = "0.8.4"
 material2 = "1.12.0"
 okhttp = "4.12.0"
 retrofit = "2.11.0"
 retrofitKotlinxSerializationJson = "1.0.0"
 jaredsburrowsLicense = "0.9.8"
+timber = "5.0.1"
 
 [libraries]
 accompanist-flowlayout = { module = "com.google.accompanist:accompanist-flowlayout", version.ref = "accompanist" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermission" }
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
+ahrs-android = { module = "com.github.pszklarska:ahrs-android", version.ref = "ahrsAndroid" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidxComposeBom" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
 androidx-compose-foundationLayout = { module = "androidx.compose.foundation:foundation-layout" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
 androidx-material2 = { module = "com.google.android.material:material", version.ref = "material2" }
 androidx-compose-material2 = { module = "androidx.compose.material:material" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
@@ -62,13 +71,16 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "androidx
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidxRoom" }
 apache-commons = { module = "commons-net:commons-net", version.ref = "apacheCommons" }
 auth0-jwtdecode = { module = "com.auth0.android:jwtdecode", version.ref = "jwt" }
+commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commonsMath3" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 kotlinx-serializationjson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
 openid-appauth = { module = "net.openid:appauth", version.ref = "appauth" }
 retrofit-core = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-kotlinserialization = { module = "com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter", version.ref = "retrofitKotlinxSerializationJson" }
+timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 
 [bundles]
 accompanist = [

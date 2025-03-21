@@ -13,6 +13,7 @@ import com.st.blue_sdk.features.magnetometer.Magnetometer
 import com.st.blue_sdk.features.magnetometer.MagnetometerInfo
 import com.st.demo.tracker_sensor.utils.MadgwickAHRS
 import com.st.demo.tracker_sensor.utils.QuaternionHelper
+import com.st.demo.tracker_sensor.utils.SwingAnalyzer
 import com.st.demo.tracker_sensor.utils.Vector3
 import com.st.demo.tracker_sensor.utils.toVector2
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +29,7 @@ import kotlin.math.sqrt
 class TrackingViewModel @Inject constructor(
     private val blueManager: BlueManager
 ) : ViewModel() {
+    private val swingAnalyzer = SwingAnalyzer()
 
     private var deviceId: String? = null
     private var featureUpdatesJob: Job? = null
@@ -174,6 +176,22 @@ class TrackingViewModel @Inject constructor(
             z = position.z
         )
 
+        // Swing detection
+        val linearAccelMag = linearAccel.length()
+        val swingUpdate = swingAnalyzer.detectSwing(linearAccelMag, timestamp)
+
+        _uiState.update { state ->
+            state.copy(
+                swingMetrics = state.swingMetrics.copy(
+                    currentPeakAccel = swingUpdate.currentPeakAccel,
+                    currentDurationMs = swingUpdate.currentDurationMs,
+                    lastPeakAccel = swingUpdate.lastPeakAccel,
+                    lastDurationMs = swingUpdate.lastDurationMs,
+                    totalSwings = swingUpdate.totalSwings,
+                    isActive = swingUpdate.isActive
+                )
+            )
+        }
         // Update UI state with new data
         _uiState.update { state ->
             val newHighlights = if (linearAccel.length() > HIGHLIGHT_THRESHOLD) {

@@ -11,5 +11,7 @@ data class TrackingState(
     // Add raw sensor data fields
     val rawAccel: Vector3 = Vector3.ZERO,
     val rawGyro: Vector3 = Vector3.ZERO,
-    val rawMag: Vector3 = Vector3.ZERO
+    val rawMag: Vector3 = Vector3.ZERO,
+
+    val swingMetrics: SwingMetrics = SwingMetrics()
 )

@@ -24,11 +24,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.st.demo.tracker_sensor.display.FieldVisualization
 import com.st.demo.tracker_sensor.display.InfoPanel
 import com.st.demo.tracker_sensor.display.SensorDataDisplay
+import com.st.demo.tracker_sensor.display.SwingMetricsUI
 import com.st.demo.tracker_sensor.model.TrackingViewModel
 
 
@@ -88,6 +90,13 @@ fun MovementTrackingScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
+            )
+
+            SwingMetricsUI(
+                metrics = uiState.swingMetrics,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(16.dp)
             )
 
             // Info panel

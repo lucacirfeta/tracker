@@ -115,7 +115,7 @@ class MadgwickAHRS(private val sampleRate: Float) {
         }
     }
 
-    private fun updateIMU(gx: Float, gy: Float, gz: Float, ax: Float, ay: Float, az: Float) {
+    fun updateIMU(gx: Float, gy: Float, gz: Float, ax: Float, ay: Float, az: Float) {
         val invSampleRate = 1.0f / sampleRate
 
         // Normalize accelerometer measurement

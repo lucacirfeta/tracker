@@ -107,6 +107,8 @@ dependencies {
     implementation(libs.bundles.network)
     implementation(libs.androidx.material2)
 
+    implementation(libs.androidx.lifecycle.runtime.ktx.v262)
+    implementation(libs.androidx.runtime.livedata)
     // DI
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

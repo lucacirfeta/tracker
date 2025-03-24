@@ -1,6 +1,5 @@
 package com.st.demo.sensor_processing.processor
 
-import com.st.demo.sensor_processing.audio.AudioAnalyzer
 import com.st.demo.sensor_processing.model.EnvironmentalConditions
 import com.st.demo.sensor_processing.model.ImpactData
 import com.st.demo.sensor_processing.model.PerformanceMetrics
@@ -37,7 +36,6 @@ class PerformanceProcessor {
     private val shotCounts = mutableMapOf(
         "Forehand" to 0,
         "Backhand" to 0,
-        "Serve" to 0
     )
 
     fun processAccel(accel: Vector3, timestamp: Long) {
@@ -61,7 +59,6 @@ class PerformanceProcessor {
     private fun updateMadgwick() {
         // Only update when all sensors have recent data
         if (lastAccelTime > 0 && lastGyroTime > 0 && lastMagTime > 0) {
-            val deltaTime = (lastAccelTime - maxOf(lastGyroTime, lastMagTime)) / 1e9f
             madgwickFilter.update(
                 gx = lastGyro.x,
                 gy = lastGyro.y,
@@ -129,49 +126,28 @@ class PerformanceProcessor {
         }
     }
 
-
-    fun processAudio(audioData: ShortArray, sampleRate: Int): ImpactData? {
-        val (impactForce, zeroCrossingRate) = AudioAnalyzer.analyzeImpact(audioData)
-
-        val shotType = when {
-            zeroCrossingRate > 4500 -> "Serve"
-            zeroCrossingRate > 3500 -> "Forehand"
-            else -> "Backhand"
-        }
-
-        return if (impactForce > 2.5f) {
-            shotCounts[shotType] = shotCounts[shotType]!! + 1
-            ImpactData(
-                force = impactForce,
-                timing = System.currentTimeMillis() - swingStartTime,
-                type = shotType,
-                racketSpeed = currentSwingPeak
-            )
-        } else null
-    }
-
     fun processEnvironment(pressure: Float, temp: Float, humidity: Float) {
         val altitude = calculateAltitude(pressure)
         val p = pressure * 100f  // Convert hPa to Pa
-        val T = temp + 273.15f   // Convert to Kelvin
+        val kelvinTemp = temp + 273.15f   // Convert to Kelvin
 
         environmental = environmental.copy(
             pressure = pressure,
             temperature = temp,
             humidity = humidity,
             altitude = altitude,
-            airDensity = calculateAirDensity(p, T, humidity)
+            airDensity = calculateAirDensity(p, kelvinTemp, humidity)
         )
     }
 
     private fun calculateAirDensity(pressurePa: Float, tempK: Float, humidity: Float): Float {
         // Using CIPM-2007 approximation
-        val R = 287.05f // Specific gas constant for dry air
-        val Rv = 461.495f // Specific gas constant for water vapor
+        val gasConstantDryAir = 287.05f // Specific gas constant for dry air
+        val waterVaporGasConstant = 461.495f // Specific gas constant for water vapor
 
         val pv = 0.611f * exp(17.27f * (tempK - 273.15f) / (tempK - 273.15f + 237.3f))
-        return (pressurePa - humidity / 100f * pv) / (R * tempK) +
-                (humidity / 100f * pv) / (Rv * tempK)
+        return (pressurePa - humidity / 100f * pv) / (gasConstantDryAir * tempK) +
+                (humidity / 100f * pv) / (waterVaporGasConstant * tempK)
     }
 
     fun getSessionMetrics() = PerformanceMetrics(

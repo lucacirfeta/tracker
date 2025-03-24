@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.st.blue_sdk.features.sensor_fusion.Quaternion
 import com.st.demo.tracker_sensor.utils.Vector3
 
 
@@ -122,27 +121,5 @@ private fun IconLabel(
         )
         Spacer(Modifier.width(4.dp))
         Text(text = value)
-    }
-}
-
-@Composable
-fun QuaternionDisplay(
-    quaternion: Quaternion?,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier) {
-        Text(
-            text = "Orientation (Quaternion)",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        quaternion?.let { q ->
-            Column(modifier.padding(4.dp)) {
-                MetricRow("qi", "%.4f".format(q.qi))
-                MetricRow("qj", "%.4f".format(q.qj))
-                MetricRow("qk", "%.4f".format(q.qk))
-                MetricRow("qs", "%.4f".format(q.qs))
-            }
-        } ?: Text("No data", style = MaterialTheme.typography.bodyMedium)
     }
 }

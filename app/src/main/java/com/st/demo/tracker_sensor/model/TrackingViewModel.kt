@@ -11,8 +11,8 @@ import com.st.blue_sdk.features.gyroscope.Gyroscope
 import com.st.blue_sdk.features.gyroscope.GyroscopeInfo
 import com.st.blue_sdk.features.magnetometer.Magnetometer
 import com.st.blue_sdk.features.magnetometer.MagnetometerInfo
-import com.st.demo.tracker_sensor.utils.MadgwickAHRS
-import com.st.demo.tracker_sensor.utils.QuaternionHelper
+import com.st.demo.tracker_sensor.utils.MadgwickAHRSTraker
+import com.st.demo.tracker_sensor.utils.QuaternionHelperTracker
 import com.st.demo.tracker_sensor.utils.SwingAnalyzer
 import com.st.demo.tracker_sensor.utils.Vector3
 import com.st.demo.tracker_sensor.utils.toVector2
@@ -40,7 +40,7 @@ class TrackingViewModel @Inject constructor(
     private lateinit var magnetometer: Feature<*>
 
     // Sensor fusion and tracking
-    private val madgwickFilter = MadgwickAHRS(sampleRate = 50f)
+    private val madgwickFilter = MadgwickAHRSTraker(sampleRate = 50f)
     private var lastTimestamp = 0L
     private var velocity = Vector3.ZERO
     private var position = Vector3.ZERO
@@ -151,7 +151,7 @@ class TrackingViewModel @Inject constructor(
         )
 
         // Calculate gravity vector from orientation
-        val gravity = QuaternionHelper.quaternionToGravity(madgwickFilter.quaternion)
+        val gravity = QuaternionHelperTracker.quaternionToGravity(madgwickFilter.quaternion)
         val linearAccel = accel - gravity
 
         // Apply Zero Velocity Update (ZUPT) to minimize drift

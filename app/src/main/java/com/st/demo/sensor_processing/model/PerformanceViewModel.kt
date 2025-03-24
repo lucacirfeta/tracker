@@ -3,7 +3,6 @@ package com.st.demo.sensor_processing.model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.st.blue_sdk.BlueManager
-import com.st.blue_sdk.features.FeatureUpdate
 import com.st.blue_sdk.features.acceleration.Acceleration
 import com.st.blue_sdk.features.acceleration.AccelerationInfo
 import com.st.blue_sdk.features.gyroscope.Gyroscope
@@ -11,6 +10,7 @@ import com.st.blue_sdk.features.gyroscope.GyroscopeInfo
 import com.st.blue_sdk.features.humidity.Humidity
 import com.st.blue_sdk.features.humidity.HumidityInfo
 import com.st.blue_sdk.features.magnetometer.Magnetometer
+import com.st.blue_sdk.features.magnetometer.MagnetometerInfo
 import com.st.blue_sdk.features.pressure.Pressure
 import com.st.blue_sdk.features.pressure.PressureInfo
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusion
@@ -25,10 +25,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 import kotlin.math.cos
 import kotlin.math.sin
@@ -43,18 +44,18 @@ class PerformanceViewModel @Inject constructor(
     private var sensorJob: Job? = null
     private var currentDeviceId: String? = null
 
-    val uiState: StateFlow<PerformanceMetrics> = _uiState
+    val uiState: StateFlow<PerformanceMetrics> =
+        _uiState.stateIn(viewModelScope, SharingStarted.Lazily, PerformanceMetrics())
 
     fun startTracking(deviceId: String) {
         currentDeviceId = deviceId
         sensorJob?.cancel()
 
-        // Get required features
         val features = blueManager.nodeFeatures(deviceId).filter {
-//            it.name == Acceleration.NAME ||
-//                    it.name == Gyroscope.NAME ||
-            it.name == MemsSensorFusionCompat.NAME ||
-                    it.name == MemsSensorFusion.NAME
+            it.name == Acceleration.NAME
+            it.name == Magnetometer.NAME ||
+                    it.name == Gyroscope.NAME
+//                    it.name == MemsSensorFusionCompat.NAME ||
 //                    it.name == Pressure.NAME ||
 //                    it.name == Humidity.NAME ||
 //                    it.name == Temperature.NAME
@@ -64,59 +65,49 @@ class PerformanceViewModel @Inject constructor(
             blueManager.enableFeatures(deviceId, features)
             blueManager.getFeatureUpdates(deviceId, features, autoEnable = false)
                 .collect { update ->
-                    processFeatureUpdate(update)
-                    _uiState.value = processor.getSessionMetrics()
+                    when (update.featureName) {
+                        Acceleration.NAME ->
+                            handleAccel(update.data as AccelerationInfo)
+
+
+                        MemsSensorFusionCompat.NAME ->
+                            handleFusionData(update.data as MemsSensorFusionInfo)
+
+
+                        Magnetometer.NAME -> handleMagn(update.data as MagnetometerInfo)
+                        Gyroscope.NAME -> handleGyro(update.data as GyroscopeInfo)
+                        Pressure.NAME -> handlePressure(update.data as PressureInfo)
+                        Humidity.NAME -> handleHumidityTemp(update.data as HumidityInfo)
+                        Temperature.NAME -> handleTemperatureData(update.data as TemperatureInfo)
+                    }
+                    _uiState.update { processor.getSessionMetrics() }
                 }
         }
     }
 
-    private fun processFeatureUpdate(update: FeatureUpdate<*>) {
-        try {
-            when (update.featureName) {
-                Acceleration.NAME -> handleAccel(update.data as AccelerationInfo)
-                Gyroscope.NAME -> handleGyro(update.data as GyroscopeInfo)
-                Pressure.NAME -> handlePressure(update.data as PressureInfo)
-                Humidity.NAME -> handleHumidityTemp(update.data as HumidityInfo)
-                MemsSensorFusionCompat.NAME -> handleFusionData(update.data as MemsSensorFusionInfo)
-                MemsSensorFusion.NAME -> handleFusionData(update.data as MemsSensorFusionInfo)
-                Temperature.NAME -> handleTemperatureData(update.data as TemperatureInfo)
-            }
-        } catch (e: ClassCastException) {
-            Timber.tag("SENSOR_ERROR")
-                .e("Data type mismatch for ${update.featureName}: ${e.message}")
-        }
+    private fun handleMagn(data: MagnetometerInfo) {
+        val magn = Vector3(
+            x = data.x.value,
+            y = data.y.value,
+            z = data.z.value
+        )
+        processor.processMagn(magn)
     }
 
     private fun handleFusionData(data: MemsSensorFusionInfo) {
         data.quaternions.lastOrNull()?.value?.let { quaternion ->
-            processor.processFusionData(quaternion)
-            _uiState.update {
-                it.copy(
-                    rawQuaternion = quaternion,
-                    smoothedQuaternion = processor.currentOrientation.toQuaternion()
-                )
-            }
-            updateOrientationAndGravity()
+            updateOrientationAndGravity(quaternion)
         }
     }
 
-    // Add extension function for conversion
-    fun Vector3.toQuaternion(): Quaternion {
-        // Convert Euler angles back to quaternion for visualization
-        val cy = cos(Math.toRadians(z * 0.5).toDouble())
-        val sy = sin(Math.toRadians(z * 0.5).toDouble())
-        val cp = cos(Math.toRadians(y * 0.5).toDouble())
-        val sp = sin(Math.toRadians(y * 0.5).toDouble())
-        val cr = cos(Math.toRadians(x * 0.5).toDouble())
-        val sr = sin(Math.toRadians(x * 0.5).toDouble())
-
-        return Quaternion(
-            timeStamp = System.currentTimeMillis(),
-            qi = (sr * cp * cy - cr * sp * sy).toFloat(),
-            qj = (cr * sp * cy + sr * cp * sy).toFloat(),
-            qk = (cr * cp * sy - sr * sp * cy).toFloat(),
-            qs = (cr * cp * cy + sr * sp * sy).toFloat()
-        )
+    private fun updateOrientationAndGravity(quaternion: Quaternion) {
+        _uiState.update {
+            it.copy(
+                orientation = processor.currentOrientation,
+                rawQuaternion = quaternion,
+                smoothedQuaternion = processor.currentOrientation.toQuaternion()
+            )
+        }
     }
 
     private fun handleAccel(data: AccelerationInfo) {
@@ -130,7 +121,7 @@ class PerformanceViewModel @Inject constructor(
             )
         }
 
-        processor.processIMU(rawAccel, System.nanoTime())
+        processor.processIMU(linearAccel, System.nanoTime())
     }
 
     private fun handleGyro(data: GyroscopeInfo) {
@@ -139,7 +130,13 @@ class PerformanceViewModel @Inject constructor(
             data.y.value.degToRad(),
             data.z.value.degToRad()
         )
+        val gyro = Vector3(
+            x = data.x.value * 0.01745f,
+            y = data.y.value * 0.01745f,
+            z = data.z.value * 0.01745f
+        )
         _uiState.update { it.copy(angularVelocity = angularVelocity) }
+        processor.processGyro(gyro)
     }
 
     private fun handlePressure(data: PressureInfo) {
@@ -188,29 +185,6 @@ class PerformanceViewModel @Inject constructor(
         )
     }
 
-    private fun updateOrientationAndGravity() {
-        _uiState.update {
-            it.copy(
-                orientation = processor.currentOrientation,
-            )
-        }
-    }
-
-    private fun Float.degToRad() = Math.toRadians(this.toDouble()).toFloat()
-
-    fun processAudioInput(buffer: ShortArray) {
-        processor.processAudio(buffer, 16000)?.let { impact ->
-            _uiState.update { state ->
-                state.copy(
-                    lastImpact = impact,
-                    shotDistribution = state.shotDistribution.toMutableMap().apply {
-                        this[impact.type] = this[impact.type]?.plus(1) ?: 0
-                    }
-                )
-            }
-        }
-    }
-
     fun resetSession() {
         processor.resetSession()
         _uiState.value = PerformanceMetrics()
@@ -239,5 +213,28 @@ class PerformanceViewModel @Inject constructor(
             blueManager.disableFeatures(deviceId, features)
         }
         currentDeviceId = null
+        sensorJob?.cancel()
     }
+
+    // Add extension function for conversion
+    fun Vector3.toQuaternion(): Quaternion {
+        // Convert Euler angles back to quaternion for visualization
+        val cy = cos(Math.toRadians(z * 0.5).toDouble())
+        val sy = sin(Math.toRadians(z * 0.5).toDouble())
+        val cp = cos(Math.toRadians(y * 0.5).toDouble())
+        val sp = sin(Math.toRadians(y * 0.5).toDouble())
+        val cr = cos(Math.toRadians(x * 0.5).toDouble())
+        val sr = sin(Math.toRadians(x * 0.5).toDouble())
+
+        return Quaternion(
+            timeStamp = System.currentTimeMillis(),
+            qi = (sr * cp * cy - cr * sp * sy).toFloat(),
+            qj = (cr * sp * cy + sr * cp * sy).toFloat(),
+            qk = (cr * cp * sy - sr * sp * cy).toFloat(),
+            qs = (cr * cp * cy + sr * sp * sy).toFloat()
+        )
+    }
+
+    private fun Float.degToRad() = Math.toRadians(this.toDouble()).toFloat()
+
 }

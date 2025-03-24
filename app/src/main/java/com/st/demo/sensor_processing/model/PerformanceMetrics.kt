@@ -13,6 +13,7 @@ data class PerformanceMetrics(
     val angularVelocity: Vector3 = Vector3.ZERO,
     val linearAcceleration: Vector3 = Vector3.ZERO,
     val swingSpeedPeak: Float = 0f,
+    val currentSpeedKmh: Float = 0f,
 
     // Environmental Context
     val environment: EnvironmentalConditions = EnvironmentalConditions(),

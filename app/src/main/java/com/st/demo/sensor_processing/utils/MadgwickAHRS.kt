@@ -1,4 +1,4 @@
-package com.st.demo.tracker_sensor.utils
+package com.st.demo.sensor_processing.utils
 
 import kotlin.math.asin
 import kotlin.math.atan2

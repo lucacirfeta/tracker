@@ -1,11 +1,13 @@
 package com.st.demo.sensor_processing.processor
 
-import com.st.blue_sdk.features.sensor_fusion.Quaternion
+import android.util.Log
 import com.st.demo.sensor_processing.audio.AudioAnalyzer
 import com.st.demo.sensor_processing.model.EnvironmentalConditions
 import com.st.demo.sensor_processing.model.ImpactData
 import com.st.demo.sensor_processing.model.PerformanceMetrics
+import com.st.demo.sensor_processing.utils.MadgwickAHRS
 import com.st.demo.sensor_processing.utils.SensorFusionHelper
+import com.st.demo.tracker_sensor.utils.QuaternionHelperTracker
 import com.st.demo.tracker_sensor.utils.Vector3
 import kotlin.math.exp
 import kotlin.math.max
@@ -13,10 +15,17 @@ import kotlin.math.pow
 
 class PerformanceProcessor {
     private val fusionHelper = SensorFusionHelper()
+    private val swingProcessor = SwingProcessor()
+    private val madgwickFilter = MadgwickAHRS(sampleRate = 50f)
+
+    // To reset
     private var swingStartTime = 0L
     private var currentSwingPeak = 0f
+    private var currentSpeedKmh = 0f
+    private var filteredSpeedKmh = 0f
     private var environmental = EnvironmentalConditions()
-    private var currentGravity = Vector3.ZERO
+    private var previousTime = 0L
+
 
     // Session Statistics
     private val shotCounts = mutableMapOf(
@@ -28,37 +37,83 @@ class PerformanceProcessor {
     val currentOrientation: Vector3
         get() = fusionHelper.currentOrientation
 
-    fun processFusionData(quaternion: Quaternion) {
-        // Add low-pass filter for gravity vector
-        val alpha = 0.8f  // Smoothing factor
-        val newGravity = fusionHelper.calculateGravityVector(quaternion)
-        currentGravity = currentGravity * alpha + newGravity * (1 - alpha)
 
-        fusionHelper.updateOrientation(quaternion)
+    fun processGyro(gyro: Vector3) {
+        val mag = Vector3.ZERO
+        val rawAccel = Vector3.ZERO
+        madgwickFilter.update(
+            gyro.x, gyro.y, gyro.z,
+            rawAccel.x, rawAccel.y, rawAccel.z,
+            mag.x, mag.y, mag.z
+        )
+    }
+
+    fun processMagn(mag: Vector3) {
+        val gyro = Vector3.ZERO
+        val rawAccel = Vector3.ZERO
+        madgwickFilter.update(
+            gyro.x, gyro.y, gyro.z,
+            rawAccel.x, rawAccel.y, rawAccel.z,
+            mag.x, mag.y, mag.z
+        )
     }
 
     fun calculateLinearAcceleration(rawAccel: Vector3): Vector3 {
-        return rawAccel - fusionHelper.getGravityVector()
+        val gyro = Vector3.ZERO
+        val mag = Vector3.ZERO
+        madgwickFilter.update(
+            gyro.x, gyro.y, gyro.z,
+            rawAccel.x, rawAccel.y, rawAccel.z,
+            mag.x, mag.y, mag.z
+        )
+
+        val gravity = QuaternionHelperTracker.quaternionToGravity(madgwickFilter.quaternion)
+
+        val linearAccel = rawAccel - gravity
+        Log.d(
+            "TRACKERLOG", "Linear acceleration: x=${String.format("%.2f", linearAccel.x)}, " +
+                    "y=${String.format("%.2f", linearAccel.y)}, " +
+                    "z=${String.format("%.2f", linearAccel.z)}"
+        )
+        return linearAccel
     }
 
     fun calculateAltitude(pressure: Float): Float {
+        Log.d("TRACKERLOG", "Calculate altitude with pressure : $pressure")
         // Simplified international barometric formula
         val seaLevelPressure = 1013.25f // hPa
         return 44330f * (1 - (pressure / seaLevelPressure).pow(0.1903f))
     }
 
+    // Modified processIMU function
     fun processIMU(linearAccel: Vector3, timestamp: Long) {
-        val currentSpeed = linearAccel.length()
+        if (previousTime == 0L) {  // Handle first measurement
+            previousTime = timestamp
+            return
+        }
 
-        // Detect new swing when acceleration exceeds threshold
-        if (currentSpeed > 15f) {
-            if (swingStartTime == 0L) { // New swing starts
+        // Process swing metrics using dedicated analyzer
+        val swingMetrics = swingProcessor.processSwing(
+            acceleration = linearAccel,
+            timestamp = timestamp
+        )
+
+        // Update swing timing for audio impact correlation
+        if (swingMetrics.isSwingActive) {
+            if (swingStartTime == 0L) {
                 swingStartTime = timestamp
-                currentSwingPeak = 0f
             }
-            currentSwingPeak = max(currentSwingPeak, currentSpeed)
+            // Optional: Add additional physics calculations here
+
+            // Update speed metrics from analyzer
+            currentSpeedKmh = swingMetrics.currentSpeedKmh
+            filteredSpeedKmh = swingMetrics.peakSpeedKmh  // Use peak instead of filtered value
+            currentSwingPeak = max(currentSwingPeak, swingMetrics.peakSpeedKmh)
+
+            // Existing environment processing
+            previousTime = timestamp
         } else {
-            swingStartTime = 0L // Reset when motion stops
+            swingStartTime = 0L
         }
     }
 
@@ -110,6 +165,7 @@ class PerformanceProcessor {
     fun getSessionMetrics() = PerformanceMetrics(
         orientation = currentOrientation,
         swingSpeedPeak = currentSwingPeak,
+        currentSpeedKmh = filteredSpeedKmh,
         shotDistribution = shotCounts.toMap(),
         lastImpact = ImpactData(),
         environment = environmental
@@ -118,7 +174,11 @@ class PerformanceProcessor {
     fun resetSession() {
         swingStartTime = 0L
         currentSwingPeak = 0f
+        currentSpeedKmh = 0f
+        filteredSpeedKmh = 0f
         shotCounts.keys.forEach { shotCounts[it] = 0 }
         environmental = EnvironmentalConditions()
+        previousTime = 0L
+        swingProcessor.reset()
     }
 }

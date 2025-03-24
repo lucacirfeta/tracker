@@ -1,6 +1,6 @@
 package com.st.demo.tracker_sensor.utils
 
-object QuaternionHelper {
+object QuaternionHelperTracker {
     fun quaternionToGravity(q: FloatArray): Vector3 {
         return Vector3(
             x = 2 * (q[1] * q[3] - q[0] * q[2]),

@@ -43,7 +43,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.st.demo.sensor_processing.component.ClimateRow
 import com.st.demo.sensor_processing.component.MetricRow
-import com.st.demo.sensor_processing.component.QuaternionDisplay
 import com.st.demo.sensor_processing.component.VectorDisplay
 import com.st.demo.sensor_processing.model.PerformanceViewModel
 
@@ -88,10 +87,8 @@ fun SensorProcessingScreen(
                     vector = state.orientation,
                     unit = "°"
                 )
-                MetricRow("Peak Speed", "%.1f m/s".format(state.swingSpeedPeak))
-                MetricRow("Current Speed", "%.1f m/s".format(state.linearAcceleration.length()))
-                QuaternionDisplay(quaternion = state.smoothedQuaternion)
-
+                MetricRow("Peak Speed", "%.1f km/h".format(state.swingSpeedPeak))
+                MetricRow("Current Speed", "%.1f km/h".format(state.currentSpeedKmh))
             }
 
             // Impact Section

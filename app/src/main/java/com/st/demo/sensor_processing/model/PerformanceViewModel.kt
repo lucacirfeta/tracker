@@ -50,19 +50,15 @@ class PerformanceViewModel @Inject constructor(
         _uiState.stateIn(viewModelScope, SharingStarted.Lazily, PerformanceMetrics())
 
     fun startTracking(deviceId: String) {
-        Log.d("TRACKERLOG", "Start tracking for device: $deviceId")
-
         currentDeviceId = deviceId
-        sensorJob?.cancel()
+        Log.d("TRACKERLOG", "Start tracking for device: $deviceId")
+        val node = blueManager.getNode(deviceId) ?: return
 
         val features = blueManager.nodeFeatures(deviceId).filter {
             it.name == Acceleration.NAME ||
+                    it.name == Gyroscope.NAME ||
                     it.name == Magnetometer.NAME ||
-                    it.name == Gyroscope.NAME
-//                    it.name == MemsSensorFusionCompat.NAME ||
-//                    it.name == Pressure.NAME ||
-//                    it.name == Humidity.NAME ||
-//                    it.name == Temperature.NAME
+                    it.name == MemsSensorFusionCompat.NAME
         }
         Log.d("TRACKERLOG", "Features enabled:")
         features.forEach {
@@ -100,6 +96,7 @@ class PerformanceViewModel @Inject constructor(
     private fun handleFusionData(data: MemsSensorFusionInfo) {
         data.quaternions.lastOrNull()?.value?.let { quaternion ->
             updateOrientationAndGravity(quaternion)
+            processor.processFusionData(quaternion)
         }
     }
 

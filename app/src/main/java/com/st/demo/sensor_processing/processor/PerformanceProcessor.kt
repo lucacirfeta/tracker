@@ -1,5 +1,7 @@
 package com.st.demo.sensor_processing.processor
 
+import android.util.Log
+import com.st.blue_sdk.features.sensor_fusion.Quaternion
 import com.st.demo.sensor_processing.model.EnvironmentalConditions
 import com.st.demo.sensor_processing.model.ImpactData
 import com.st.demo.sensor_processing.model.PerformanceMetrics
@@ -14,7 +16,7 @@ import kotlin.math.pow
 class PerformanceProcessor {
     private val fusionHelper = SensorFusionHelper()
     private val swingProcessor = SwingProcessor()
-    private val madgwickFilter = MadgwickAHRS(sampleRate = 200f)
+    private val madgwickFilter = MadgwickAHRS(sampleRate = 100f)
 
     // To reset
     private var swingStartTime = 0L
@@ -22,7 +24,6 @@ class PerformanceProcessor {
     private var currentSpeedKmh = 0f
     private var filteredSpeedKmh = 0f
     private var environmental = EnvironmentalConditions()
-    private var previousTime = 0L
 
     private var lastRawAccel = Vector3.ZERO
     private var lastGyro = Vector3.ZERO
@@ -36,6 +37,9 @@ class PerformanceProcessor {
     private val shotCounts = mutableMapOf(
         "Forehand" to 0,
         "Backhand" to 0,
+        "Smash" to 0,
+        "Unclassified" to 0,
+        "Total" to 0
     )
 
     fun processAccel(accel: Vector3, timestamp: Long) {
@@ -88,6 +92,10 @@ class PerformanceProcessor {
         return rawAccel - gravity
     }
 
+    fun processFusionData(quaternion: Quaternion) {
+        fusionHelper.updateOrientation(quaternion)
+    }
+
     fun calculateAltitude(pressure: Float): Float {
         // Simplified international barometric formula
         val seaLevelPressure = 1013.25f // hPa
@@ -96,14 +104,11 @@ class PerformanceProcessor {
 
     // Modified processIMU function
     fun processIMU(linearAccel: Vector3, timestamp: Long) {
-        if (previousTime == 0L) {  // Handle first measurement
-            previousTime = timestamp
-            return
-        }
-
         // Process swing metrics using dedicated analyzer
         val swingMetrics = swingProcessor.processSwing(
             acceleration = linearAccel,
+            orientation = fusionHelper.currentOrientation,
+            angularVelocity = lastGyro,
             timestamp = timestamp
         )
 
@@ -112,15 +117,22 @@ class PerformanceProcessor {
             if (swingStartTime == 0L) {
                 swingStartTime = timestamp
             }
-            // Optional: Add additional physics calculations here
 
             // Update speed metrics from analyzer
             currentSpeedKmh = swingMetrics.currentSpeedKmh
             filteredSpeedKmh = 0.2f * swingMetrics.currentSpeedKmh + (1 - 0.2f) * filteredSpeedKmh
             currentSwingPeak = max(currentSwingPeak, swingMetrics.peakSpeedKmh)
+        } else if (swingMetrics.type != "Idle") {
+            // Handle completed swings
+            when (swingMetrics.type) {
+                "Forehand", "Backhand", "Smash" -> {
+                    shotCounts.merge(swingMetrics.type, 1) { old, new -> old + new }
+                }
+                "Neutral" -> shotCounts.merge("Unclassified", 1) { old, new -> old + new }
+            }
 
-            // Existing environment processing
-            previousTime = timestamp
+            // Update total swings counter
+            shotCounts["Total"] = shotCounts.getOrDefault("Total", 0) + 1
         } else {
             swingStartTime = 0L
         }
@@ -166,7 +178,6 @@ class PerformanceProcessor {
         filteredSpeedKmh = 0f
         shotCounts.keys.forEach { shotCounts[it] = 0 }
         environmental = EnvironmentalConditions()
-        previousTime = 0L
         swingProcessor.reset()
         lastAccelTime = 0
         lastGyroTime = 0

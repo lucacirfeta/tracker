@@ -6,5 +6,6 @@ data class SwingData(
     val peakAcceleration: Float = 0f,   // Max acceleration (m/s²)
     val swingDurationMs: Long = 0L,     // Current/last swing duration
     val totalSwings: Int = 0,           // Total completed swings
-    val isSwingActive: Boolean = false  // Swing state
+    val isSwingActive: Boolean = false,  // Swing state
+    val type: String = "Undefined"       // Added swing type
 )

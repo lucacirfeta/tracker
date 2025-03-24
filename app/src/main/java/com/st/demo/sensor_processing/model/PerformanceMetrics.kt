@@ -26,8 +26,8 @@ data class PerformanceMetrics(
     val shotDistribution: Map<String, Int> = mapOf(
         "Forehand" to 0,
         "Backhand" to 0,
-        "Serve" to 0
-    )
+        "Smash" to 0
+    ),
 )
 
 data class ImpactData(

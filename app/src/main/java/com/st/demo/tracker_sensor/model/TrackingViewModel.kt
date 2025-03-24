@@ -1,5 +1,6 @@
 package com.st.demo.tracker_sensor.model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.st.blue_sdk.BlueManager
@@ -68,6 +69,10 @@ class TrackingViewModel @Inject constructor(
                     it.name == Magnetometer.NAME
         }
 
+        Log.d("TRACKERLOG", "Features enabled:")
+        features.forEach {
+            Log.d("TRACKERLOG", it.name)
+        }
         // Store feature references
         accelerometer = features.first { it.name == Acceleration.NAME }
         gyroscope = features.first { it.name == Gyroscope.NAME }

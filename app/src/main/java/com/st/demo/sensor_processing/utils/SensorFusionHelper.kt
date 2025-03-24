@@ -9,7 +9,6 @@ import kotlin.math.pow
 class SensorFusionHelper {
     private val quaternionBuffer = CircularBuffer(5)
     internal var currentOrientation = Vector3.ZERO
-    private var currentGravity = Vector3.ZERO
 
     fun updateOrientation(quaternion: Quaternion) {
         // Buffer quaternion components for smoothing
@@ -23,9 +22,7 @@ class SensorFusionHelper {
             smoothed.z,
             quaternion.qs  // Scalar doesn't need smoothing
         )
-
         currentOrientation = calculateEulerAngles(smoothedQuaternion)
-        currentGravity = calculateGravityVector(smoothedQuaternion)
     }
 
     private fun calculateEulerAngles(q: Quaternion): Vector3 {
@@ -52,16 +49,5 @@ class SensorFusionHelper {
         ).toFloat()
 
         return Vector3(roll, pitch, yaw)
-    }
-
-    fun getGravityVector() = currentGravity
-
-    internal fun calculateGravityVector(q: Quaternion): Vector3 {
-        // More stable gravity calculation
-        return Vector3(
-            2 * (q.qi * q.qk - q.qs * q.qj),
-            2 * (q.qs * q.qi + q.qj * q.qk),
-            q.qs.pow(2) - q.qi.pow(2) - q.qj.pow(2) + q.qk.pow(2)
-        ).normalized() * 9.81f
     }
 }

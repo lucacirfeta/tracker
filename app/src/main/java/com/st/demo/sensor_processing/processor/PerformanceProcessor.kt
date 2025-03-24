@@ -16,7 +16,9 @@ import kotlin.math.pow
 class PerformanceProcessor {
     private val fusionHelper = SensorFusionHelper()
     private val swingProcessor = SwingProcessor()
-    private val madgwickFilter = MadgwickAHRS(sampleRate = 50f)
+    private val madgwickFilter = MadgwickAHRS(sampleRate = 200f).apply {
+        setBeta(0.2f)
+    }
 
     // To reset
     private var swingStartTime = 0L
@@ -26,6 +28,9 @@ class PerformanceProcessor {
     private var environmental = EnvironmentalConditions()
     private var previousTime = 0L
 
+    private var lastRawAccel = Vector3.ZERO
+    private var lastGyro = Vector3.ZERO
+    private var lastMag = Vector3.ZERO
 
     // Session Statistics
     private val shotCounts = mutableMapOf(
@@ -39,43 +44,33 @@ class PerformanceProcessor {
 
 
     fun processGyro(gyro: Vector3) {
-        val mag = Vector3.ZERO
-        val rawAccel = Vector3.ZERO
+        lastGyro = gyro
+        // Pass actual sensor values to Madgwick
         madgwickFilter.update(
             gyro.x, gyro.y, gyro.z,
-            rawAccel.x, rawAccel.y, rawAccel.z,
-            mag.x, mag.y, mag.z
+            lastRawAccel.x, lastRawAccel.y, lastRawAccel.z,
+            lastMag.x, lastMag.y, lastMag.z
         )
     }
 
     fun processMagn(mag: Vector3) {
-        val gyro = Vector3.ZERO
-        val rawAccel = Vector3.ZERO
+        lastMag = mag
         madgwickFilter.update(
-            gyro.x, gyro.y, gyro.z,
-            rawAccel.x, rawAccel.y, rawAccel.z,
+            lastGyro.x, lastGyro.y, lastGyro.z,
+            lastRawAccel.x, lastRawAccel.y, lastRawAccel.z,
             mag.x, mag.y, mag.z
         )
     }
 
     fun calculateLinearAcceleration(rawAccel: Vector3): Vector3 {
-        val gyro = Vector3.ZERO
-        val mag = Vector3.ZERO
+        lastRawAccel = rawAccel
         madgwickFilter.update(
-            gyro.x, gyro.y, gyro.z,
+            lastGyro.x, lastGyro.y, lastGyro.z,
             rawAccel.x, rawAccel.y, rawAccel.z,
-            mag.x, mag.y, mag.z
+            lastMag.x, lastMag.y, lastMag.z
         )
-
         val gravity = QuaternionHelperTracker.quaternionToGravity(madgwickFilter.quaternion)
-
-        val linearAccel = rawAccel - gravity
-        Log.d(
-            "TRACKERLOG", "Linear acceleration: x=${String.format("%.2f", linearAccel.x)}, " +
-                    "y=${String.format("%.2f", linearAccel.y)}, " +
-                    "z=${String.format("%.2f", linearAccel.z)}"
-        )
-        return linearAccel
+        return rawAccel - gravity
     }
 
     fun calculateAltitude(pressure: Float): Float {
@@ -107,7 +102,7 @@ class PerformanceProcessor {
 
             // Update speed metrics from analyzer
             currentSpeedKmh = swingMetrics.currentSpeedKmh
-            filteredSpeedKmh = swingMetrics.peakSpeedKmh  // Use peak instead of filtered value
+            filteredSpeedKmh = 0.2f * swingMetrics.currentSpeedKmh + (1 - 0.2f) * filteredSpeedKmh
             currentSwingPeak = max(currentSwingPeak, swingMetrics.peakSpeedKmh)
 
             // Existing environment processing

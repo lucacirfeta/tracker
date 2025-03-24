@@ -1,11 +1,12 @@
 package com.st.demo.sensor_processing.processor
 
+import android.util.Log
 import com.st.demo.sensor_processing.model.SwingData
 import com.st.demo.tracker_sensor.utils.Vector3
 
 class SwingProcessor(
     private val startThreshold: Float = 30f,    // Acceleration to detect swing start (m/s²)
-    private val endThreshold: Float = 5f        // Acceleration to detect swing end (m/s²)
+    private val endThreshold: Float = 20f        // Acceleration to detect swing end (m/s²)
 ) {
     private val motionlessThreshold = 0.5f // m/s²
 
@@ -23,7 +24,8 @@ class SwingProcessor(
         var peakSpeedKmh: Float = 0f,
         // Swing metrics
         var peakAcceleration: Float = 0f,
-        var totalSwings: Int = 0
+        var totalSwings: Int = 0,
+        var lastFilteredAccel: Vector3 = Vector3.ZERO
     )
 
     /**
@@ -35,6 +37,10 @@ class SwingProcessor(
     fun processSwing(acceleration: Vector3, timestamp: Long): SwingData = synchronized(this) {
         val accelMag = acceleration.length()
         val deltaTime = calculateDeltaTime(timestamp)
+        Log.d(
+            "TRACKERLOG",
+            "processSwing: accelMag=$accelMag, isSwinging=${internalState.isSwinging}, deltaTime=$deltaTime"
+        )
 
         return when {
             // New swing detected
@@ -76,8 +82,12 @@ class SwingProcessor(
         if (acceleration.length() < motionlessThreshold) {
             internalState.velocity = Vector3.ZERO
         }
+        // High-pass filter to remove drift (coefficient = 0.98)
+        val alphaHP = 0.98f
+        val filteredAccel = acceleration * (1 - alphaHP) + internalState.lastFilteredAccel * alphaHP
+        internalState.lastFilteredAccel = filteredAccel
         // Physics integration: v = v₀ + a·Δt
-        internalState.velocity += acceleration * deltaTime
+        internalState.velocity += filteredAccel * deltaTime
         internalState.currentSpeedKmh = internalState.velocity.length() * 3.6f // m/s → km/h
         internalState.peakSpeedKmh =
             maxOf(internalState.peakSpeedKmh, internalState.currentSpeedKmh)

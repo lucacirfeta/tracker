@@ -1,5 +1,6 @@
 package com.st.demo.sensor_processing.model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.st.blue_sdk.BlueManager
@@ -48,17 +49,23 @@ class PerformanceViewModel @Inject constructor(
         _uiState.stateIn(viewModelScope, SharingStarted.Lazily, PerformanceMetrics())
 
     fun startTracking(deviceId: String) {
+        Log.d("TRACKERLOG", "Start tracking for device: $deviceId")
+
         currentDeviceId = deviceId
         sensorJob?.cancel()
 
         val features = blueManager.nodeFeatures(deviceId).filter {
-            it.name == Acceleration.NAME
-            it.name == Magnetometer.NAME ||
+            it.name == Acceleration.NAME ||
+                    it.name == Magnetometer.NAME ||
                     it.name == Gyroscope.NAME
 //                    it.name == MemsSensorFusionCompat.NAME ||
 //                    it.name == Pressure.NAME ||
 //                    it.name == Humidity.NAME ||
 //                    it.name == Temperature.NAME
+        }
+        Log.d("TRACKERLOG", "Features enabled:")
+        features.forEach {
+            Log.d("TRACKERLOG", it.name)
         }
 
         sensorJob = viewModelScope.launch {
@@ -66,14 +73,8 @@ class PerformanceViewModel @Inject constructor(
             blueManager.getFeatureUpdates(deviceId, features, autoEnable = false)
                 .collect { update ->
                     when (update.featureName) {
-                        Acceleration.NAME ->
-                            handleAccel(update.data as AccelerationInfo)
-
-
-                        MemsSensorFusionCompat.NAME ->
-                            handleFusionData(update.data as MemsSensorFusionInfo)
-
-
+                        MemsSensorFusionCompat.NAME -> handleFusionData(update.data as MemsSensorFusionInfo)
+                        Acceleration.NAME -> handleAccel(update.data as AccelerationInfo)
                         Magnetometer.NAME -> handleMagn(update.data as MagnetometerInfo)
                         Gyroscope.NAME -> handleGyro(update.data as GyroscopeInfo)
                         Pressure.NAME -> handlePressure(update.data as PressureInfo)
@@ -111,7 +112,11 @@ class PerformanceViewModel @Inject constructor(
     }
 
     private fun handleAccel(data: AccelerationInfo) {
-        val rawAccel = Vector3(data.x.value, data.y.value, data.z.value)
+        val rawAccel = Vector3(
+            x = data.x.value * 0.00981f,
+            y = data.y.value * 0.00981f,
+            z = data.z.value * 0.00981f
+        )
         val linearAccel = processor.calculateLinearAcceleration(rawAccel)
 
         _uiState.update {
@@ -125,17 +130,12 @@ class PerformanceViewModel @Inject constructor(
     }
 
     private fun handleGyro(data: GyroscopeInfo) {
-        val angularVelocity = Vector3(
-            data.x.value.degToRad(),
-            data.y.value.degToRad(),
-            data.z.value.degToRad()
-        )
         val gyro = Vector3(
             x = data.x.value * 0.01745f,
             y = data.y.value * 0.01745f,
             z = data.z.value * 0.01745f
         )
-        _uiState.update { it.copy(angularVelocity = angularVelocity) }
+        _uiState.update { it.copy(angularVelocity = gyro) }
         processor.processGyro(gyro)
     }
 

@@ -1,6 +1,5 @@
 package com.st.demo.sensor_processing.processor
 
-import android.util.Log
 import com.st.demo.sensor_processing.audio.AudioAnalyzer
 import com.st.demo.sensor_processing.model.EnvironmentalConditions
 import com.st.demo.sensor_processing.model.ImpactData
@@ -16,9 +15,7 @@ import kotlin.math.pow
 class PerformanceProcessor {
     private val fusionHelper = SensorFusionHelper()
     private val swingProcessor = SwingProcessor()
-    private val madgwickFilter = MadgwickAHRS(sampleRate = 200f).apply {
-        setBeta(0.2f)
-    }
+    private val madgwickFilter = MadgwickAHRS(sampleRate = 200f)
 
     // To reset
     private var swingStartTime = 0L
@@ -32,6 +29,10 @@ class PerformanceProcessor {
     private var lastGyro = Vector3.ZERO
     private var lastMag = Vector3.ZERO
 
+    private var lastAccelTime = 0L
+    private var lastGyroTime = 0L
+    private var lastMagTime = 0L
+
     // Session Statistics
     private val shotCounts = mutableMapOf(
         "Forehand" to 0,
@@ -39,42 +40,58 @@ class PerformanceProcessor {
         "Serve" to 0
     )
 
+    fun processAccel(accel: Vector3, timestamp: Long) {
+        lastRawAccel = accel
+        lastAccelTime = timestamp
+        updateMadgwick()
+    }
+
+    fun processGyro(gyro: Vector3, timestamp: Long) {
+        lastGyro = gyro
+        lastGyroTime = timestamp
+        updateMadgwick()
+    }
+
+    fun processMagn(mag: Vector3, timestamp: Long) {
+        lastMag = mag
+        lastMagTime = timestamp
+        updateMadgwick()
+    }
+
+    private fun updateMadgwick() {
+        // Only update when all sensors have recent data
+        if (lastAccelTime > 0 && lastGyroTime > 0 && lastMagTime > 0) {
+            val deltaTime = (lastAccelTime - maxOf(lastGyroTime, lastMagTime)) / 1e9f
+            madgwickFilter.update(
+                gx = lastGyro.x,
+                gy = lastGyro.y,
+                gz = lastGyro.z,
+                ax = lastRawAccel.x,
+                ay = lastRawAccel.y,
+                az = lastRawAccel.z,
+                mx = lastMag.x,
+                my = lastMag.y,
+                mz = lastMag.z
+            )
+            // Reset timestamps after processing
+            lastAccelTime = 0
+            lastGyroTime = 0
+            lastMagTime = 0
+        }
+    }
+
     val currentOrientation: Vector3
         get() = fusionHelper.currentOrientation
 
-
-    fun processGyro(gyro: Vector3) {
-        lastGyro = gyro
-        // Pass actual sensor values to Madgwick
-        madgwickFilter.update(
-            gyro.x, gyro.y, gyro.z,
-            lastRawAccel.x, lastRawAccel.y, lastRawAccel.z,
-            lastMag.x, lastMag.y, lastMag.z
-        )
-    }
-
-    fun processMagn(mag: Vector3) {
-        lastMag = mag
-        madgwickFilter.update(
-            lastGyro.x, lastGyro.y, lastGyro.z,
-            lastRawAccel.x, lastRawAccel.y, lastRawAccel.z,
-            mag.x, mag.y, mag.z
-        )
-    }
-
-    fun calculateLinearAcceleration(rawAccel: Vector3): Vector3 {
-        lastRawAccel = rawAccel
-        madgwickFilter.update(
-            lastGyro.x, lastGyro.y, lastGyro.z,
-            rawAccel.x, rawAccel.y, rawAccel.z,
-            lastMag.x, lastMag.y, lastMag.z
-        )
+    fun calculateLinearAcceleration(rawAccel: Vector3, timeStamp: Long): Vector3 {
+        // Update Madgwick first
+        processAccel(rawAccel, timeStamp)
+        // Get gravity from fused orientation
         val gravity = QuaternionHelperTracker.quaternionToGravity(madgwickFilter.quaternion)
         return rawAccel - gravity
     }
 
     fun calculateAltitude(pressure: Float): Float {
-        Log.d("TRACKERLOG", "Calculate altitude with pressure : $pressure")
         // Simplified international barometric formula
         val seaLevelPressure = 1013.25f // hPa
         return 44330f * (1 - (pressure / seaLevelPressure).pow(0.1903f))
@@ -175,5 +192,8 @@ class PerformanceProcessor {
         environmental = EnvironmentalConditions()
         previousTime = 0L
         swingProcessor.reset()
+        lastAccelTime = 0
+        lastGyroTime = 0
+        lastMagTime = 0
     }
 }

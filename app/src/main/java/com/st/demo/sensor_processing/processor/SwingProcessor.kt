@@ -37,10 +37,6 @@ class SwingProcessor(
     fun processSwing(acceleration: Vector3, timestamp: Long): SwingData = synchronized(this) {
         val accelMag = acceleration.length()
         val deltaTime = calculateDeltaTime(timestamp)
-        Log.d(
-            "TRACKERLOG",
-            "processSwing: accelMag=$accelMag, isSwinging=${internalState.isSwinging}, deltaTime=$deltaTime"
-        )
 
         return when {
             // New swing detected

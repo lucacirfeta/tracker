@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep class com.google.android.filament.** { *; }
+-dontwarn com.google.android.filament.**
+
+-keep class com.google.ar.sceneform.** { *; }
+-dontwarn com.google.ar.sceneform.**

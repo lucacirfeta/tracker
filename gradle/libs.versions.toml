@@ -9,11 +9,9 @@
 # @pin https://github.com/google/accompanist#compose-versions
 accompanist = "0.36.0"
 accompanistPermission = "0.37.2"
-ahrsAndroid = "1.0.3"
 androidGradlePlugin = "8.9.0"
 # @pin https://developer.android.com/jetpack/androidx/releases/compose#versions
 androidxComposeBom = "2025.02.00"
-androidxEspresso = "3.6.0-rc01"
 androidxHiltNavigationCompose = "1.2.0"
 # https://issuetracker.google.com/issues/336842920
 # @pin
@@ -24,6 +22,8 @@ apacheCommons = "3.11.1"
 appauth = "0.11.1"
 benManes = "0.51.0"
 commonsMath3 = "3.6.1"
+coreVersion = "1.17.1"
+fragmentKtx = "1.8.6"
 hilt = "2.55"
 jwt = "2.0.2"
 # @pin https://developer.android.com/jetpack/androidx/releases/compose-kotlin
@@ -42,16 +42,17 @@ retrofit = "2.11.0"
 retrofitKotlinxSerializationJson = "1.0.0"
 jaredsburrowsLicense = "0.9.8"
 runtimeLivedata = "1.7.8"
+sceneview = "2.2.1"
 timber = "5.0.1"
 
 [libraries]
 accompanist-flowlayout = { module = "com.google.accompanist:accompanist-flowlayout", version.ref = "accompanist" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermission" }
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
-ahrs-android = { module = "com.github.pszklarska:ahrs-android", version.ref = "ahrsAndroid" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidxComposeBom" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
 androidx-compose-foundationLayout = { module = "androidx.compose.foundation:foundation-layout" }
+androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-runtime-ktx-v262 = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtxVersion" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
@@ -84,6 +85,7 @@ okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.
 openid-appauth = { module = "net.openid:appauth", version.ref = "appauth" }
 retrofit-core = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-kotlinserialization = { module = "com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter", version.ref = "retrofitKotlinxSerializationJson" }
+sceneview = { module = "io.github.sceneview:sceneview", version.ref = "sceneview" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 
 [bundles]

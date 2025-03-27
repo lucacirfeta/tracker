@@ -6,7 +6,7 @@ import com.st.demo.tracker_sensor.utils.Vector3
 
 data class PerformanceMetrics(
     // Motion Analysis
-    val rawQuaternion: Quaternion? = null,
+    val rawQuaternion: Quaternion = Quaternion(0L, 0f, 0f, 0f, 1f),
     val smoothedQuaternion: Quaternion? = null,
     val rawAcceleration: Vector3 = Vector3.ZERO,
     val orientation: Vector3 = Vector3.ZERO,

@@ -1,6 +1,10 @@
 package com.st.demo.sensor_processing.model
 
+import android.content.Context
+import android.os.Build
+import android.os.Environment
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.st.blue_sdk.BlueManager
@@ -19,11 +23,11 @@ import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusion
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusionCompat
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusionInfo
 import com.st.blue_sdk.features.sensor_fusion.Quaternion
-import com.st.blue_sdk.features.temperature.Temperature
 import com.st.blue_sdk.features.temperature.TemperatureInfo
 import com.st.demo.sensor_processing.processor.PerformanceProcessor
 import com.st.demo.tracker_sensor.utils.Vector3
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 import kotlin.math.cos
 import kotlin.math.sin
@@ -39,6 +44,7 @@ import kotlin.math.sin
 
 @HiltViewModel
 class PerformanceViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val blueManager: BlueManager
 ) : ViewModel() {
     private val processor = PerformanceProcessor()
@@ -46,8 +52,58 @@ class PerformanceViewModel @Inject constructor(
     private var sensorJob: Job? = null
     private var currentDeviceId: String? = null
 
+    private var currentSessionDir: File? = null
+
     val uiState: StateFlow<PerformanceMetrics> =
         _uiState.stateIn(viewModelScope, SharingStarted.Lazily, PerformanceMetrics())
+
+    private fun getPublicDownloadDirectory(): File {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Use MediaStore for Android 10+ (scoped storage)
+            File(Environment.getExternalStorageDirectory(), Environment.DIRECTORY_DOWNLOADS)
+        } else {
+            // Use legacy public directory for older versions
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        }
+    }
+
+    private fun createSessionDirectory() {
+        val mainDir = File(getPublicDownloadDirectory(), "Data/Forehand")
+        mainDir.mkdirs()
+
+        val sessionFolders = mainDir.listFiles { file ->
+            file.isDirectory && file.name.startsWith("session")
+        }?.mapNotNull {
+            it.name.removePrefix("session").toIntOrNull()
+        } ?: emptyList()
+
+        val nextSessionNumber = sessionFolders.maxOrNull()?.plus(1) ?: 1
+        currentSessionDir = File(mainDir, "session$nextSessionNumber").apply { mkdirs() }
+    }
+
+    private fun logToFile(update: FeatureUpdate<*>) {
+        val feature = update.featureName
+        val data = update.data.toString().replace("\n", " ")
+
+        viewModelScope.launch {
+            try {
+                val timestamp = System.currentTimeMillis()
+                val file = File(currentSessionDir, "${feature}.txt")
+                val logEntry = "$timestamp - $data\n"
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    // Use OutputStream for Android 10+
+                    val fos = context.contentResolver.openOutputStream(file.toUri(), "wa")
+                    fos?.write(logEntry.toByteArray())
+                    fos?.close()
+                } else {
+                    file.appendText(logEntry)
+                }
+            } catch (e: Exception) {
+                Log.e("TRACKERLOG", "Error writing to log file", e)
+            }
+        }
+    }
 
     fun startTracking(deviceId: String) {
         currentDeviceId = deviceId
@@ -64,21 +120,22 @@ class PerformanceViewModel @Inject constructor(
         features.forEach {
             Log.d("TRACKERLOG", it.name)
         }
+        createSessionDirectory()
 
         sensorJob = viewModelScope.launch {
             blueManager.enableFeatures(deviceId, features)
             blueManager.getFeatureUpdates(deviceId, features, autoEnable = false)
-                .collect { update ->
-                    when (update.featureName) {
-                        MemsSensorFusionCompat.NAME -> handleFusionData(update.data as MemsSensorFusionInfo)
-                        Acceleration.NAME -> handleAccel(update)
-                        Magnetometer.NAME -> handleMagn(update)
-                        Gyroscope.NAME -> handleGyro(update)
-                        Pressure.NAME -> handlePressure(update.data as PressureInfo)
-                        Humidity.NAME -> handleHumidityTemp(update.data as HumidityInfo)
-                        Temperature.NAME -> handleTemperatureData(update.data as TemperatureInfo)
-                    }
-                    _uiState.update { processor.getSessionMetrics() }
+                .collect { update -> logToFile(update)
+//                    when (update.featureName) {
+//                        MemsSensorFusionCompat.NAME -> handleFusionData(update.data as MemsSensorFusionInfo)
+//                        Acceleration.NAME -> handleAccel(update)
+//                        Magnetometer.NAME -> handleMagn(update)
+//                        Gyroscope.NAME -> handleGyro(update)
+//                        Pressure.NAME -> handlePressure(update.data as PressureInfo)
+//                        Humidity.NAME -> handleHumidityTemp(update.data as HumidityInfo)
+//                        Temperature.NAME -> handleTemperatureData(update.data as TemperatureInfo)
+//                    }
+//                    _uiState.update { processor.getSessionMetrics() }
                 }
         }
     }

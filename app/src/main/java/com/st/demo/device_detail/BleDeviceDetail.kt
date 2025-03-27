@@ -136,6 +136,17 @@ fun BleDeviceDetail(
             Text("Sensor Processing")
         }
 
+        Card(
+            modifier = Modifier
+                .fillMaxWidth().padding(bottom = 4.dp,top = 4.dp)
+                .clickable {
+                    navController.navigate("renderScreen/${deviceId}")
+                },
+            colors = CardDefaults.cardColors(containerColor = Color(color = 0xFFF7F8FA) /*Grey1*/),
+        ) {
+            Text("Racket Render")
+        }
+
         Spacer(modifier = Modifier.height(10.dp))
 
         Text("Features: ")

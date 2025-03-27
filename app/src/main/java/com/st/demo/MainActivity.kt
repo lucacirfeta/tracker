@@ -28,6 +28,7 @@ import com.st.demo.audio.AudioScreen
 import com.st.demo.device_detail.BleDeviceDetail
 import com.st.demo.device_list.BleDeviceList
 import com.st.demo.feature_detail.FeatureDetail
+import com.st.demo.render.RenderingScreen
 import com.st.demo.sensor_processing.SensorProcessingScreen
 import com.st.demo.tracker_sensor.MovementTrackingScreen
 import com.st.demo.ui.theme.StDemoTheme
@@ -131,6 +132,15 @@ private fun MainScreen() {
                 arguments = listOf(navArgument("deviceId") { type = NavType.StringType })
             ) { backStackEntry ->
                 SensorProcessingScreen(
+                    navController = navController,
+                    deviceId = backStackEntry.arguments?.getString("deviceId")!!
+                )
+            }
+            composable(
+                route = "renderScreen/{deviceId}",
+                arguments = listOf(navArgument("deviceId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                RenderingScreen(
                     navController = navController,
                     deviceId = backStackEntry.arguments?.getString("deviceId")!!
                 )

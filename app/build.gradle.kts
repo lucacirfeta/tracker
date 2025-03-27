@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.jaredsburrowsLicense)
+
 }
 
 android {
@@ -120,6 +121,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.coroutines.android)
+
+    implementation(libs.sceneview)
+    implementation(libs.androidx.fragment.ktx)
 
     // Debugging
     debugImplementation(libs.androidx.compose.uitestmanifest)

@@ -32,6 +32,7 @@ import androidx.navigation.NavController
 import com.google.android.filament.Skybox
 import com.st.demo.render.model.RenderingViewModel
 import com.st.demo.render.utils.QuaternionHelper
+import dev.romainguy.kotlin.math.Quaternion
 import io.github.sceneview.Scene
 import io.github.sceneview.environment.Environment
 import io.github.sceneview.math.Position
@@ -123,7 +124,6 @@ fun RenderingScreen(
                 childNodes = childNodes
             )
 
-            // 4. Aggiornamento rotazione da quaternione
             LaunchedEffect(state.rawQuaternion, state.offsetQuaternion) {
                 val raw = state.rawQuaternion
                 val offset = state.offsetQuaternion
@@ -134,7 +134,7 @@ fun RenderingScreen(
                     raw
                 )
 
-                modelNode?.quaternion = dev.romainguy.kotlin.math.Quaternion(
+                modelNode?.quaternion = Quaternion(
                     x = adjustedQuaternion.qi,
                     y = adjustedQuaternion.qj,
                     z = adjustedQuaternion.qk,

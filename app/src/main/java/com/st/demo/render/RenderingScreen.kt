@@ -32,7 +32,6 @@ import androidx.navigation.NavController
 import com.google.android.filament.Skybox
 import com.st.demo.render.model.RenderingViewModel
 import com.st.demo.render.utils.QuaternionHelper
-import dev.romainguy.kotlin.math.Quaternion
 import io.github.sceneview.Scene
 import io.github.sceneview.environment.Environment
 import io.github.sceneview.math.Position
@@ -55,6 +54,7 @@ fun RenderingScreen(
 
     val childNodes = rememberNodes()
     var modelNode by remember { mutableStateOf<ModelNode?>(null) }
+    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(Unit) {
         val modelInstance = modelLoader.createModelInstance(
@@ -78,7 +78,6 @@ fun RenderingScreen(
             indirectLight = null
         )
     }
-    val haptic = LocalHapticFeedback.current
 
     Scaffold(
         topBar = {

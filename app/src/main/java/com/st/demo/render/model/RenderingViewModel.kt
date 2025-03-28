@@ -1,5 +1,6 @@
 package com.st.demo.render.model
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,8 +8,10 @@ import com.st.blue_sdk.BlueManager
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusion
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusionCompat
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusionInfo
-import com.st.demo.sensor_processing.model.PerformanceMetrics
+import com.st.blue_sdk.features.sensor_fusion.Quaternion
+import com.st.demo.render.utils.PreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,14 +24,30 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RenderingViewModel @Inject constructor(
-    private val blueManager: BlueManager
+    private val blueManager: BlueManager,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
     private var currentDeviceId: String? = null
     private var sensorJob: Job? = null
-    private val _uiState = MutableStateFlow(PerformanceMetrics())
+    private val _uiState = MutableStateFlow(QuaternionData())
 
-    val uiState: StateFlow<PerformanceMetrics> =
-        _uiState.stateIn(viewModelScope, SharingStarted.Lazily, PerformanceMetrics())
+    init {
+        loadSavedPosition()
+    }
+
+    private fun loadSavedPosition() {
+        val prefs = PreferencesManager.getInstance(context)
+        prefs.loadResetPosition()?.let { savedQuaternion ->
+            _uiState.update { currentState ->
+                currentState.copy(
+                    offsetQuaternion = savedQuaternion
+                )
+            }
+        }
+    }
+
+    val uiState: StateFlow<QuaternionData> =
+        _uiState.stateIn(viewModelScope, SharingStarted.Lazily, QuaternionData())
 
     fun startListening(deviceId: String) {
         currentDeviceId = deviceId
@@ -59,6 +78,32 @@ class RenderingViewModel @Inject constructor(
         }
     }
 
+    fun reset() {
+        _uiState.update {
+            QuaternionData(
+                rawQuaternion = Quaternion(0L, 0f, 0f, 0f, 1f),
+                offsetQuaternion = Quaternion(0L, 0f, 0f, 0f, 1f)
+            )
+        }
+    }
+
+    fun savePosition() {
+        val prefs = PreferencesManager.getInstance(context)
+        _uiState.update { currentState ->
+            val newOffset = currentState.rawQuaternion.copy(timeStamp = 0L)
+            // Save to preferences
+            prefs.saveResetPosition(
+                newOffset.qi,
+                newOffset.qj,
+                newOffset.qk,
+                newOffset.qs
+            )
+            currentState.copy(
+                offsetQuaternion = newOffset
+            )
+        }
+    }
+
     private suspend fun CoroutineScope.stopTracking(deviceId: String) {
         sensorJob?.cancel()
         // Get required features
@@ -77,7 +122,7 @@ class RenderingViewModel @Inject constructor(
         data.quaternions.lastOrNull()?.value?.let { quaternion ->
             _uiState.update {
                 it.copy(
-                    rawQuaternion = quaternion,
+                    rawQuaternion = quaternion
                 )
             }
         }

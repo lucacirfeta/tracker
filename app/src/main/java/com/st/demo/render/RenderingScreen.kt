@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,10 +25,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.android.filament.Skybox
 import com.st.demo.render.model.RenderingViewModel
+import com.st.demo.render.utils.QuaternionHelper
 import dev.romainguy.kotlin.math.Quaternion
 import io.github.sceneview.Scene
 import io.github.sceneview.environment.Environment
@@ -73,12 +78,22 @@ fun RenderingScreen(
             indirectLight = null
         )
     }
+    val haptic = LocalHapticFeedback.current
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Rendering") },
                 actions = {
+                    IconButton(onClick = {
+                        viewModel.reset()
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    }) {
+                        Icon(Icons.Default.Refresh, "Reset")
+                    }
+                    IconButton(onClick = { viewModel.savePosition() }) {
+                        Icon(Icons.Default.Save, "Save")
+                    }
                     RenderControls(
                         viewModel = viewModel,
                         deviceId = deviceId,
@@ -110,16 +125,22 @@ fun RenderingScreen(
             )
 
             // 4. Aggiornamento rotazione da quaternione
-            LaunchedEffect(state.rawQuaternion) {
-                state.rawQuaternion.let { quaternion ->
-                    modelNode?.quaternion = Quaternion(
-                        x = quaternion.qi,
-                        y = quaternion.qj,
-                        z = quaternion.qk,
-                        w = quaternion.qs
-                    )
+            LaunchedEffect(state.rawQuaternion, state.offsetQuaternion) {
+                val raw = state.rawQuaternion
+                val offset = state.offsetQuaternion
 
-                }
+                // Convert to math library Quaternion using helper functions
+                val adjustedQuaternion = QuaternionHelper.multiply(
+                    QuaternionHelper.inverse(offset),
+                    raw
+                )
+
+                modelNode?.quaternion = dev.romainguy.kotlin.math.Quaternion(
+                    x = adjustedQuaternion.qi,
+                    y = adjustedQuaternion.qj,
+                    z = adjustedQuaternion.qk,
+                    w = adjustedQuaternion.qs
+                )
             }
         }
     }

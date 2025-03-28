@@ -1,4 +1,4 @@
-package com.st.demo.sensor_processing.utils
+package com.st.demo.render.utils
 
 import com.st.blue_sdk.features.sensor_fusion.Quaternion
 import com.st.demo.tracker_sensor.utils.Vector3

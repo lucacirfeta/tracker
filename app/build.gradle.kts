@@ -123,7 +123,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     implementation(libs.sceneview)
-    implementation(libs.androidx.fragment.ktx)
 
     // Debugging
     debugImplementation(libs.androidx.compose.uitestmanifest)

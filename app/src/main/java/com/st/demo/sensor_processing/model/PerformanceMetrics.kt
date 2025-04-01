@@ -2,7 +2,7 @@ package com.st.demo.sensor_processing.model
 
 
 import com.st.blue_sdk.features.sensor_fusion.Quaternion
-import com.st.demo.tracker_sensor.utils.Vector3
+import com.st.demo.common.model.Vector3
 
 data class PerformanceMetrics(
     // Motion Analysis

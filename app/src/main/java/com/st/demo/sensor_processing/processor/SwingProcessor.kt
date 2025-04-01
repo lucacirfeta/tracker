@@ -2,7 +2,7 @@ package com.st.demo.sensor_processing.processor
 
 import android.util.Log
 import com.st.demo.sensor_processing.model.SwingData
-import com.st.demo.tracker_sensor.utils.Vector3
+import com.st.demo.common.model.Vector3
 
 class SwingProcessor(
     private val startThreshold: Float = 30f,  // m/s²

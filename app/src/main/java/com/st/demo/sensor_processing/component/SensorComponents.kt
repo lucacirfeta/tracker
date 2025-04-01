@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.st.demo.tracker_sensor.utils.Vector3
+import com.st.demo.common.model.Vector3
 
 
 @Composable

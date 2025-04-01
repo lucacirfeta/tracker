@@ -1,14 +1,13 @@
 package com.st.demo.sensor_processing.processor
 
-import android.util.Log
 import com.st.blue_sdk.features.sensor_fusion.Quaternion
+import com.st.demo.common.model.Vector3
+import com.st.demo.common.utils.QuaternionHelper
 import com.st.demo.sensor_processing.model.EnvironmentalConditions
 import com.st.demo.sensor_processing.model.ImpactData
 import com.st.demo.sensor_processing.model.PerformanceMetrics
 import com.st.demo.sensor_processing.utils.MadgwickAHRS
 import com.st.demo.sensor_processing.utils.SensorFusionHelper
-import com.st.demo.tracker_sensor.utils.QuaternionHelperTracker
-import com.st.demo.tracker_sensor.utils.Vector3
 import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.pow
@@ -88,7 +87,7 @@ class PerformanceProcessor {
         // Update Madgwick first
         processAccel(rawAccel, timeStamp)
         // Get gravity from fused orientation
-        val gravity = QuaternionHelperTracker.quaternionToGravity(madgwickFilter.quaternion)
+        val gravity = QuaternionHelper.quaternionToGravity(madgwickFilter.quaternion)
         return rawAccel - gravity
     }
 

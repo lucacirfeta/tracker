@@ -26,7 +26,7 @@ import com.st.blue_sdk.features.sensor_fusion.Quaternion
 import com.st.blue_sdk.features.temperature.Temperature
 import com.st.blue_sdk.features.temperature.TemperatureInfo
 import com.st.demo.sensor_processing.processor.PerformanceProcessor
-import com.st.demo.tracker_sensor.utils.Vector3
+import com.st.demo.common.model.Vector3
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope

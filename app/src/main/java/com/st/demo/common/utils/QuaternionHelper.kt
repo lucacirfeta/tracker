@@ -1,7 +1,7 @@
-package com.st.demo.render.utils
+package com.st.demo.common.utils
 
 import com.st.blue_sdk.features.sensor_fusion.Quaternion
-import com.st.demo.tracker_sensor.utils.Vector3
+import com.st.demo.common.model.Vector3
 
 object QuaternionHelper {
 
@@ -10,6 +10,14 @@ object QuaternionHelper {
             x = 2 * (q.qi * q.qk - q.qs * q.qj),
             y = 2 * (q.qj * q.qk + q.qs * q.qi),
             z = 1 - 2 * (q.qi * q.qi + q.qj * q.qj)
+        )
+    }
+
+    fun quaternionToGravity(q: FloatArray): Vector3 {
+        return Vector3(
+            x = 2 * (q[1] * q[3] - q[0] * q[2]),
+            y = 2 * (q[0] * q[1] + q[2] * q[3]),
+            z = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]
         )
     }
 

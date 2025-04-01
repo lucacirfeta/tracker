@@ -5,10 +5,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.st.blue_sdk.BlueManager
+import com.st.blue_sdk.features.Feature
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusion
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusionCompat
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusionInfo
-import com.st.blue_sdk.features.sensor_fusion.Quaternion
 import com.st.demo.render.utils.PreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -30,20 +30,10 @@ class RenderingViewModel @Inject constructor(
     private var currentDeviceId: String? = null
     private var sensorJob: Job? = null
     private val _uiState = MutableStateFlow(QuaternionData())
+    private var features: List<Feature<*>> = emptyList()
 
     init {
         loadSavedPosition()
-    }
-
-    private fun loadSavedPosition() {
-        val prefs = PreferencesManager.getInstance(context)
-        prefs.loadResetPosition()?.let { savedQuaternion ->
-            _uiState.update { currentState ->
-                currentState.copy(
-                    offsetQuaternion = savedQuaternion
-                )
-            }
-        }
     }
 
     val uiState: StateFlow<QuaternionData> =
@@ -53,9 +43,10 @@ class RenderingViewModel @Inject constructor(
         currentDeviceId = deviceId
         val node = blueManager.getNode(deviceId) ?: return
 
-        val features = blueManager.nodeFeatures(deviceId).filter {
+        features = blueManager.nodeFeatures(deviceId).filter {
             it.name == MemsSensorFusionCompat.NAME
         }
+
         Log.d("TRACKERLOG", "Features enabled:")
         features.forEach {
             Log.d("TRACKERLOG", it.name)
@@ -72,9 +63,13 @@ class RenderingViewModel @Inject constructor(
         }
     }
 
-    fun stopListeningClicked(deviceId: String) {
-        viewModelScope.launch {
-            stopTracking(deviceId)
+    private fun handleFusionData(data: MemsSensorFusionInfo) {
+        data.quaternions.lastOrNull()?.value?.let { quaternion ->
+            _uiState.update {
+                it.copy(
+                    rawQuaternion = quaternion
+                )
+            }
         }
     }
 
@@ -105,27 +100,30 @@ class RenderingViewModel @Inject constructor(
         }
     }
 
+    private fun loadSavedPosition() {
+        val prefs = PreferencesManager.getInstance(context)
+        prefs.loadResetPosition()?.let { savedQuaternion ->
+            _uiState.update { currentState ->
+                currentState.copy(
+                    offsetQuaternion = savedQuaternion
+                )
+            }
+        }
+    }
+
+    fun stopListeningClicked(deviceId: String) {
+        viewModelScope.launch {
+            stopTracking(deviceId)
+        }
+    }
+
     private suspend fun CoroutineScope.stopTracking(deviceId: String) {
         sensorJob?.cancel()
         // Get required features
-        val features = blueManager.nodeFeatures(deviceId).filter {
-            it.name == MemsSensorFusion.NAME
-        }
-
         currentDeviceId?.let { deviceId ->
             blueManager.disableFeatures(deviceId, features)
         }
         currentDeviceId = null
         sensorJob?.cancel()
-    }
-
-    private fun handleFusionData(data: MemsSensorFusionInfo) {
-        data.quaternions.lastOrNull()?.value?.let { quaternion ->
-            _uiState.update {
-                it.copy(
-                    rawQuaternion = quaternion
-                )
-            }
-        }
     }
 }

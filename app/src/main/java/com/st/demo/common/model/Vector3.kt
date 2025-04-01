@@ -1,4 +1,4 @@
-package com.st.demo.tracker_sensor.utils
+package com.st.demo.common.model
 
 import kotlin.math.sqrt
 

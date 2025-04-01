@@ -1,7 +1,7 @@
 package com.st.demo.sensor_processing.utils
 
 import com.st.blue_sdk.features.sensor_fusion.Quaternion
-import com.st.demo.tracker_sensor.utils.Vector3
+import com.st.demo.common.model.Vector3
 import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.pow

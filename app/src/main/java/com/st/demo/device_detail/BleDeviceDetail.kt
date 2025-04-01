@@ -118,11 +118,11 @@ fun BleDeviceDetail(
             modifier = Modifier
                 .fillMaxWidth().padding(bottom = 4.dp,top = 4.dp)
                 .clickable {
-                    navController.navigate("movementTracking/${deviceId}")
+                    navController.navigate("sensorTest/${deviceId}")
                 },
             colors = CardDefaults.cardColors(containerColor = Color(color = 0xFFF7F8FA) /*Grey1*/),
         ) {
-            Text("Movement Tracking")
+            Text("Sensor Test")
         }
 
         Card(

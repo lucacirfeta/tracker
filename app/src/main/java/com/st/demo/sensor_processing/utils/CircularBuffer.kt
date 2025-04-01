@@ -1,6 +1,6 @@
 package com.st.demo.sensor_processing.utils
 
-import com.st.demo.tracker_sensor.utils.Vector3
+import com.st.demo.common.model.Vector3
 
 class CircularBuffer(private val capacity: Int) {
     private val buffer = mutableListOf<Vector3>()

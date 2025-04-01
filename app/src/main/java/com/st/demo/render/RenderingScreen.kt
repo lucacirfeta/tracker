@@ -29,7 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.android.filament.Skybox
 import com.st.demo.render.model.RenderingViewModel
-import com.st.demo.render.utils.QuaternionHelper
+import com.st.demo.common.utils.QuaternionHelper
 import dev.romainguy.kotlin.math.Quaternion
 import io.github.sceneview.Scene
 import io.github.sceneview.environment.Environment

@@ -30,7 +30,7 @@ import com.st.demo.device_list.BleDeviceList
 import com.st.demo.feature_detail.FeatureDetail
 import com.st.demo.render.RenderingScreen
 import com.st.demo.sensor_processing.SensorProcessingScreen
-import com.st.demo.tracker_sensor.MovementTrackingScreen
+import com.st.demo.sensor_test.SensorTestScreen
 import com.st.demo.ui.theme.StDemoTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -118,10 +118,10 @@ private fun MainScreen() {
             }
 
             composable(
-                route = "movementTracking/{deviceId}",
+                route = "sensorTest/{deviceId}",
                 arguments = listOf(navArgument("deviceId") { type = NavType.StringType })
             ) { backStackEntry ->
-                MovementTrackingScreen(
+                SensorTestScreen(
                     navController = navController,
                     deviceId = backStackEntry.arguments?.getString("deviceId")!!
                 )

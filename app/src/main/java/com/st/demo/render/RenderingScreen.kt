@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CompassCalibration
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,8 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.android.filament.Skybox
@@ -55,11 +53,10 @@ fun RenderingScreen(
 
     val childNodes = rememberNodes()
     var modelNode by remember { mutableStateOf<ModelNode?>(null) }
-    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(Unit) {
         val modelInstance = modelLoader.createModelInstance(
-            assetFileLocation = "models/racket.glb" // Percorso del modello
+            assetFileLocation = "models/racket.glb"
         )
         modelNode = ModelNode(
             modelInstance = modelInstance,
@@ -86,10 +83,9 @@ fun RenderingScreen(
                 title = { Text("Rendering") },
                 actions = {
                     IconButton(onClick = {
-                        viewModel.reset()
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.calibrate()
                     }) {
-                        Icon(Icons.Default.Refresh, "Reset")
+                        Icon(Icons.Default.CompassCalibration, "Calibrate")
                     }
                     IconButton(onClick = { viewModel.savePosition() }) {
                         Icon(Icons.Default.Save, "Save")

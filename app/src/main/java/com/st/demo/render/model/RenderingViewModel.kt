@@ -78,14 +78,15 @@ class RenderingViewModel @Inject constructor(
         }
     }
 
-    fun reset() {
+    fun calibrate() {
         _uiState.update {
-            QuaternionData(
-                rawQuaternion = Quaternion(0L, 0f, 0f, 0f, 1f),
-                offsetQuaternion = Quaternion(0L, 0f, 0f, 0f, 1f)
+            it.copy(
+                offsetQuaternion = it.rawQuaternion,
             )
         }
+        savePosition()
     }
+
 
     fun savePosition() {
         val prefs = PreferencesManager.getInstance(context)

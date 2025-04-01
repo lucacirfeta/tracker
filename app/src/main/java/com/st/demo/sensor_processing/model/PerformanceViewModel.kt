@@ -23,6 +23,7 @@ import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusion
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusionCompat
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusionInfo
 import com.st.blue_sdk.features.sensor_fusion.Quaternion
+import com.st.blue_sdk.features.temperature.Temperature
 import com.st.blue_sdk.features.temperature.TemperatureInfo
 import com.st.demo.sensor_processing.processor.PerformanceProcessor
 import com.st.demo.tracker_sensor.utils.Vector3
@@ -126,16 +127,16 @@ class PerformanceViewModel @Inject constructor(
             blueManager.enableFeatures(deviceId, features)
             blueManager.getFeatureUpdates(deviceId, features, autoEnable = false)
                 .collect { update -> logToFile(update)
-//                    when (update.featureName) {
-//                        MemsSensorFusionCompat.NAME -> handleFusionData(update.data as MemsSensorFusionInfo)
-//                        Acceleration.NAME -> handleAccel(update)
-//                        Magnetometer.NAME -> handleMagn(update)
-//                        Gyroscope.NAME -> handleGyro(update)
-//                        Pressure.NAME -> handlePressure(update.data as PressureInfo)
-//                        Humidity.NAME -> handleHumidityTemp(update.data as HumidityInfo)
-//                        Temperature.NAME -> handleTemperatureData(update.data as TemperatureInfo)
-//                    }
-//                    _uiState.update { processor.getSessionMetrics() }
+                    when (update.featureName) {
+                        MemsSensorFusionCompat.NAME -> handleFusionData(update.data as MemsSensorFusionInfo)
+                        Acceleration.NAME -> handleAccel(update)
+                        Magnetometer.NAME -> handleMagn(update)
+                        Gyroscope.NAME -> handleGyro(update)
+                        Pressure.NAME -> handlePressure(update.data as PressureInfo)
+                        Humidity.NAME -> handleHumidityTemp(update.data as HumidityInfo)
+                        Temperature.NAME -> handleTemperatureData(update.data as TemperatureInfo)
+                    }
+                    _uiState.update { processor.getSessionMetrics() }
                 }
         }
     }
@@ -147,6 +148,7 @@ class PerformanceViewModel @Inject constructor(
             y = data.y.value,
             z = data.z.value
         )
+        Log.d("TRACKERLOG", "Magn: $magn")
         processor.processMagn(magn, update.timeStamp)
     }
 
@@ -174,6 +176,7 @@ class PerformanceViewModel @Inject constructor(
             y = data.y.value * 0.00981f,
             z = data.z.value * 0.00981f
         )
+        Log.d("TRACKERLOG", "Accel: $rawAccel")
         val linearAccel = processor.calculateLinearAcceleration(rawAccel, update.timeStamp)
 
         _uiState.update {
@@ -193,6 +196,7 @@ class PerformanceViewModel @Inject constructor(
             y = data.y.value.degToRad(),
             z = data.z.value.degToRad()
         )
+        Log.d("TRACKERLOG", "Gyro: $gyro")
         processor.processGyro(gyro, update.timeStamp)
         _uiState.update { it.copy(angularVelocity = gyro) }
     }

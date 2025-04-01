@@ -54,12 +54,4 @@ object QuaternionHelper {
             z = 2 * deltaQ.qk / deltaTime
         )
     }
-
-    fun getForwardVector(q: Quaternion): Vector3 {
-        return Vector3(
-            x = 2 * (q.qi * q.qk + q.qs * q.qj),
-            y = 2 * (q.qj * q.qk - q.qs * q.qi),
-            z = 1 - 2 * (q.qi * q.qi + q.qj * q.qj)
-        ).normalized()
-    }
 }

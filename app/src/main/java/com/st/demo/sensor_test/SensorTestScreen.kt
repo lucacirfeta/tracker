@@ -1,6 +1,8 @@
 package com.st.demo.sensor_test
 
-import androidx.compose.foundation.Canvas
+import android.opengl.GLSurfaceView
+import android.util.Log
+import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -19,20 +23,22 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.st.demo.sensor_test.model.SensorTestState
 import com.st.demo.sensor_test.model.SensorTestViewModel
-
+import com.st.demo.sensor_test.render.SensorRenderer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,22 +49,32 @@ fun SensorTestScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.startTracking(deviceId)
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            viewModel.stopTracking()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Field Tracking") },
+                actions = {
+                    var isTracking by remember { mutableStateOf(false) }
+
+                    IconButton(onClick = {
+                        if (isTracking) {
+                            viewModel.stopTracking()
+                        } else {
+                            viewModel.startTracking(deviceId)
+                        }
+                        isTracking = !isTracking
+                    }) {
+                        Icon(
+                            imageVector = if (isTracking) Icons.Default.Stop else Icons.Default.PlayArrow,
+                            contentDescription = if (isTracking) "Stop" else "Start"
+                        )
+                    }
+                },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        navController.popBackStack()
+                        viewModel.stopTracking()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }
@@ -70,10 +86,45 @@ fun SensorTestScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            // Field background
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawRect(color = Color.LightGray)
-            }
+
+            AndroidView(
+                factory = { context ->
+                    try {
+                        GLSurfaceView(context).apply {
+                            setEGLContextClientVersion(2)
+                            preserveEGLContextOnPause = true
+                            // 3. Aggiungi listener per il ciclo di vita della view
+                            addOnAttachStateChangeListener(object :
+                                View.OnAttachStateChangeListener {
+                                override fun onViewAttachedToWindow(v: View) {
+                                    // Imposta il render mode DOPO che la view è stata attaccata
+                                    renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
+                                }
+
+                                override fun onViewDetachedFromWindow(v: View) {}
+                            })
+
+                            // 4. Imposta il renderer SOLO dopo il controllo del contesto
+                            val renderer = SensorRenderer(context)
+                            setRenderer(renderer)
+                            tag = renderer
+                        }
+                    } catch (e: Exception) {
+                        Log.e("RENDER_SENSOR_TEST", "Errore creazione GLSurfaceView", e)
+                        throw e
+                    }
+                },
+                update = { glView ->
+                    val renderer = glView.tag as? SensorRenderer
+                    renderer?.let {
+                        glView.queueEvent {
+                            it.updateQuaternion(uiState.quaternion)
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+
             // Sensor Data Display
             SensorDataDisplay(
                 state = uiState,

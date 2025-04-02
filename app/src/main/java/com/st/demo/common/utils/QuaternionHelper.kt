@@ -21,6 +21,38 @@ object QuaternionHelper {
         )
     }
 
+    fun dev.romainguy.kotlin.math.Quaternion.toRotationMatrix(matrix: FloatArray) {
+        val xx = x * x
+        val xy = x * y
+        val xz = x * z
+        val xw = x * w
+        val yy = y * y
+        val yz = y * z
+        val yw = y * w
+        val zz = z * z
+        val zw = z * w
+
+        matrix[0] = 1 - 2 * (yy + zz)
+        matrix[1] = 2 * (xy - zw)
+        matrix[2] = 2 * (xz + yw)
+        matrix[3] = 0f
+
+        matrix[4] = 2 * (xy + zw)
+        matrix[5] = 1 - 2 * (xx + zz)
+        matrix[6] = 2 * (yz - xw)
+        matrix[7] = 0f
+
+        matrix[8] = 2 * (xz - yw)
+        matrix[9] = 2 * (yz + xw)
+        matrix[10] = 1 - 2 * (xx + yy)
+        matrix[11] = 0f
+
+        matrix[12] = 0f
+        matrix[13] = 0f
+        matrix[14] = 0f
+        matrix[15] = 1f
+    }
+
     fun inverse(quaternion: Quaternion): Quaternion {
         val norm =
             quaternion.qi * quaternion.qi + quaternion.qj * quaternion.qj + quaternion.qk * quaternion.qk + quaternion.qs * quaternion.qs
@@ -46,6 +78,16 @@ object QuaternionHelper {
             qs = qs
         )
     }
+
+    fun toMathQuaternion(quaternion: Quaternion): dev.romainguy.kotlin.math.Quaternion {
+        return dev.romainguy.kotlin.math.Quaternion(
+            quaternion.qi,
+            quaternion.qj,
+            quaternion.qk,
+            quaternion.qs
+        )
+    }
+
 
     fun computeAngularVelocity(
         currentQuaternion: Quaternion,

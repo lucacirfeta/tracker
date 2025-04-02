@@ -14,6 +14,7 @@ import com.st.blue_sdk.features.magnetometer.MagnetometerInfo
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusionCompat
 import com.st.blue_sdk.features.sensor_fusion.MemsSensorFusionInfo
 import com.st.demo.common.model.Vector3
+import com.st.demo.common.utils.QuaternionHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -45,9 +46,9 @@ class SensorTestViewModel @Inject constructor(
                     it.name == MemsSensorFusionCompat.NAME
         }
 
-        Log.d("TRACKERLOG", "Features enabled:")
+        Log.d("RENDER_SENSOR_TEST", "Features enabled:")
         features.forEach {
-            Log.d("TRACKERLOG", it.name)
+            Log.d("RENDER_SENSOR_TEST", it.name)
         }
 
         sensorJob = viewModelScope.launch {
@@ -66,7 +67,10 @@ class SensorTestViewModel @Inject constructor(
 
     private fun CoroutineScope.handleFusionData(data: MemsSensorFusionInfo) {
         data.quaternions.lastOrNull()?.value?.let { quaternion ->
-            Log.d("TRACKERLOG", "Quaternion: $quaternion")
+            _uiState.value = _uiState.value.copy(
+                quaternion = QuaternionHelper.toMathQuaternion(quaternion),
+                lastUpdate = System.currentTimeMillis()
+            )
         }
     }
 
@@ -76,7 +80,8 @@ class SensorTestViewModel @Inject constructor(
             y = data.y.value,
             z = data.z.value
         )
-
+        _uiState.value =
+            _uiState.value.copy(rawAccel = rawAcc, lastUpdate = System.currentTimeMillis())
     }
 
     private fun CoroutineScope.handleMagn(data: MagnetometerInfo) {
@@ -85,6 +90,9 @@ class SensorTestViewModel @Inject constructor(
             y = data.y.value,
             z = data.z.value
         )
+        _uiState.value =
+            _uiState.value.copy(rawMag = rawMag, lastUpdate = System.currentTimeMillis())
+
     }
 
     private fun CoroutineScope.handleGyro(data: GyroscopeInfo) {
@@ -93,6 +101,9 @@ class SensorTestViewModel @Inject constructor(
             y = data.y.value,
             z = data.z.value
         )
+        _uiState.value =
+            _uiState.value.copy(rawGyro = rawGyro, lastUpdate = System.currentTimeMillis())
+
     }
 
     fun stopTracking() {

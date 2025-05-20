@@ -25,3 +25,6 @@
 
 -keep class com.google.ar.sceneform.** { *; }
 -dontwarn com.google.ar.sceneform.**
+
+-keep class org.tensorflow.lite.** { *; }
+-keep class org.jtransforms.** { *; }

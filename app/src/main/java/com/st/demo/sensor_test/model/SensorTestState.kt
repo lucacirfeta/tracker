@@ -8,6 +8,7 @@ data class SensorTestState(
     val rawAccel: Vector3 = Vector3.ZERO,
     val rawGyro: Vector3 = Vector3.ZERO,
     val rawMag: Vector3 = Vector3.ZERO,
-    val quaternion: Quaternion? = null
+    val quaternion: Quaternion? = null,
+    val prediction: String = ""
 
 )

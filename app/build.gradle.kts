@@ -120,9 +120,15 @@ dependencies {
     // Architecture
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.sceneview)
+    // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
-    implementation(libs.sceneview)
+    // TensorFlow Lite
+    implementation (libs.org.tensorflow.tensorflow.lite.v280)
+    implementation (libs.tensorflow.lite.support)
+    // FFT
+    implementation (libs.wendykierp.jtransforms)
 
     // Debugging
     debugImplementation(libs.androidx.compose.uitestmanifest)

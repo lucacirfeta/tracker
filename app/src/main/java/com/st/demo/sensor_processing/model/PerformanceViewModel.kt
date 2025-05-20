@@ -69,17 +69,7 @@ class PerformanceViewModel @Inject constructor(
     }
 
     private fun createSessionDirectory() {
-        val mainDir = File(getPublicDownloadDirectory(), "Data/Forehand")
-        mainDir.mkdirs()
-
-        val sessionFolders = mainDir.listFiles { file ->
-            file.isDirectory && file.name.startsWith("session")
-        }?.mapNotNull {
-            it.name.removePrefix("session").toIntOrNull()
-        } ?: emptyList()
-
-        val nextSessionNumber = sessionFolders.maxOrNull()?.plus(1) ?: 1
-        currentSessionDir = File(mainDir, "session$nextSessionNumber").apply { mkdirs() }
+        currentSessionDir = File(getPublicDownloadDirectory(), "Data/Backhand").apply { mkdirs() }
     }
 
     private fun logToFile(update: FeatureUpdate<*>) {
@@ -87,11 +77,11 @@ class PerformanceViewModel @Inject constructor(
         val data = update.data.toString().replace("\n", " ")
 
         viewModelScope.launch {
+            val timestamp = System.currentTimeMillis()
+
             try {
-                val timestamp = System.currentTimeMillis()
                 val file = File(currentSessionDir, "${feature}.txt")
                 val logEntry = "$timestamp - $data\n"
-
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     // Use OutputStream for Android 10+
                     val fos = context.contentResolver.openOutputStream(file.toUri(), "wa")
@@ -126,17 +116,16 @@ class PerformanceViewModel @Inject constructor(
         sensorJob = viewModelScope.launch {
             blueManager.enableFeatures(deviceId, features)
             blueManager.getFeatureUpdates(deviceId, features, autoEnable = false)
-                .collect { update -> logToFile(update)
-                    when (update.featureName) {
-                        MemsSensorFusionCompat.NAME -> handleFusionData(update.data as MemsSensorFusionInfo)
-                        Acceleration.NAME -> handleAccel(update)
-                        Magnetometer.NAME -> handleMagn(update)
-                        Gyroscope.NAME -> handleGyro(update)
-                        Pressure.NAME -> handlePressure(update.data as PressureInfo)
-                        Humidity.NAME -> handleHumidityTemp(update.data as HumidityInfo)
-                        Temperature.NAME -> handleTemperatureData(update.data as TemperatureInfo)
-                    }
-                    _uiState.update { processor.getSessionMetrics() }
+                .collect { update ->
+                    logToFile(update)
+//                    when (update.featureName) {
+//                        MemsSensorFusionCompat.NAME -> handleFusionData(update.data as MemsSensorFusionInfo)
+//                        Acceleration.NAME -> handleAccel(update)
+//                        Magnetometer.NAME -> handleMagn(update)
+//                        Gyroscope.NAME -> handleGyro(update)
+//                        Pressure.NAME -> handlePressure(update.data as PressureInfo)
+//                    }
+//                    _uiState.update { processor.getSessionMetrics() }
                 }
         }
     }

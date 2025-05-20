@@ -1,8 +1,6 @@
 package com.st.demo.sensor_test
 
-import android.opengl.GLSurfaceView
 import android.util.Log
-import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,19 +31,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.st.demo.sensor_test.model.SensorTestState
 import com.st.demo.sensor_test.model.SensorTestViewModel
-import com.st.demo.sensor_test.render.SensorRenderer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SensorTestScreen(
     viewModel: SensorTestViewModel = hiltViewModel(),
     navController: NavController,
-    deviceId: String,
+    deviceId: String
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -86,44 +82,7 @@ fun SensorTestScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
-
-            AndroidView(
-                factory = { context ->
-                    try {
-                        GLSurfaceView(context).apply {
-                            setEGLContextClientVersion(2)
-                            preserveEGLContextOnPause = true
-                            // 3. Aggiungi listener per il ciclo di vita della view
-                            addOnAttachStateChangeListener(object :
-                                View.OnAttachStateChangeListener {
-                                override fun onViewAttachedToWindow(v: View) {
-                                    // Imposta il render mode DOPO che la view è stata attaccata
-                                    renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
-                                }
-
-                                override fun onViewDetachedFromWindow(v: View) {}
-                            })
-
-                            // 4. Imposta il renderer SOLO dopo il controllo del contesto
-                            val renderer = SensorRenderer(context)
-                            setRenderer(renderer)
-                            tag = renderer
-                        }
-                    } catch (e: Exception) {
-                        Log.e("RENDER_SENSOR_TEST", "Errore creazione GLSurfaceView", e)
-                        throw e
-                    }
-                },
-                update = { glView ->
-                    val renderer = glView.tag as? SensorRenderer
-                    renderer?.let {
-                        glView.queueEvent {
-                            it.updateQuaternion(uiState.quaternion)
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
+            Text("PREDICTION: ${uiState.prediction}", fontWeight = FontWeight.Bold)
 
             // Sensor Data Display
             SensorDataDisplay(
